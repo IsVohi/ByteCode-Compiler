@@ -1,0 +1,57 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.dll
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.user
+*.project
+*.cproject
+
+# CMake build directories
+cmake-build-debug/
+cmake-build-release/
+
+# Test coverage files
+*.gcov
+*.gcda
+*.gcno
+coverage/
+coverage.html
+setup.sh
+
+# Python cache and coverage
+__pycache__/
+*.pyc
+.pytest_cache/
+htmlcov/
+
+# Result files
+results/*.csv
+results/*.html
+results/*.json
+results/*.txt
+
+# Compiled test and benchmark binaries
+compiler
+tests
+benchmarks
+*.out
+
+# Doxygen
+docs/html/
+docs/latex/
