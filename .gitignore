@@ -48,7 +48,6 @@ results/*.txt
 
 # Compiled test and benchmark binaries
 compiler
-tests
 benchmarks
 *.out
 

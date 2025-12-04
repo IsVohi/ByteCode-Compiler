@@ -16,11 +16,14 @@ endif()
 # Include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Main compiler executable
-add_executable(compiler
+# Source files for main compiler executable
+set(COMPILER_SOURCES
     src/main.cpp
+    src/lexer.cpp
 )
 
+# Main compiler executable
+add_executable(compiler ${COMPILER_SOURCES})
 target_include_directories(compiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Testing setup with GoogleTest
@@ -33,15 +36,18 @@ FetchContent_MakeAvailable(googletest)
 # Enable testing
 enable_testing()
 
-# Tests target (empty for now)
+# Test executable
 add_executable(tests
-    tests/test_runner.cpp
+    tests/test_lexer.cpp
+    src/lexer.cpp
 )
 
 target_link_libraries(tests
     gtest_main
     gtest
 )
+
+target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_test(NAME AllTests COMMAND tests)
 
@@ -59,3 +65,4 @@ message(STATUS "Optimizing Bytecode Compiler Configuration:")
 message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "  Lexer: enabled")
