@@ -20,6 +20,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(COMPILER_SOURCES
     src/main.cpp
     src/lexer.cpp
+    src/parser.cpp
+    src/ast.cpp
 )
 
 # Main compiler executable
@@ -39,7 +41,10 @@ enable_testing()
 # Test executable
 add_executable(tests
     tests/test_lexer.cpp
+    tests/test_parser.cpp
     src/lexer.cpp
+    src/parser.cpp
+    src/ast.cpp
 )
 
 target_link_libraries(tests
@@ -66,3 +71,5 @@ message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "  Lexer: enabled")
+message(STATUS "  Parser: enabled (skeleton)")
+message(STATUS "  AST: enabled")

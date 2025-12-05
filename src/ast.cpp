@@ -1,0 +1,65 @@
+#include "ast.h"
+
+// ============================================================================
+// Expression Node Implementations
+// ============================================================================
+
+void NumberExpr::accept(ASTVisitor& visitor) const {
+    visitor.visitNumberExpr(*this);
+}
+
+void IdentifierExpr::accept(ASTVisitor& visitor) const {
+    visitor.visitIdentifierExpr(*this);
+}
+
+void BinaryOpExpr::accept(ASTVisitor& visitor) const {
+    visitor.visitBinaryOpExpr(*this);
+}
+
+void UnaryOpExpr::accept(ASTVisitor& visitor) const {
+    visitor.visitUnaryOpExpr(*this);
+}
+
+void FunctionCallExpr::accept(ASTVisitor& visitor) const {
+    visitor.visitFunctionCallExpr(*this);
+}
+
+// ============================================================================
+// Statement Node Implementations
+// ============================================================================
+
+void AssignmentStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitAssignmentStmt(*this);
+}
+
+void PrintStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitPrintStmt(*this);
+}
+
+void IfStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitIfStmt(*this);
+}
+
+void WhileStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitWhileStmt(*this);
+}
+
+void ReturnStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitReturnStmt(*this);
+}
+
+void BlockStmt::accept(ASTVisitor& visitor) const {
+    visitor.visitBlockStmt(*this);
+}
+
+// ============================================================================
+// Top-Level Node Implementations
+// ============================================================================
+
+void FunctionDecl::accept(ASTVisitor& visitor) const {
+    visitor.visitFunctionDecl(*this);
+}
+
+void Program::accept(ASTVisitor& visitor) const {
+    visitor.visitProgram(*this);
+}
