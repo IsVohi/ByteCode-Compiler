@@ -259,7 +259,7 @@ python benchmark.py
 # Open ../results/dashboard.html for charts
 ```
 
-## Contributing Guidelines
+## Contributing Guidelines 
 
 - Maintain C++17 compliance  
 - Add tests for new features  
