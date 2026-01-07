@@ -66,3 +66,7 @@ examples/test_*.txt
 # Google Test build artifacts
 _deps/
 lib/
+
+# Server dependencies
+server/node_modules/
+server/package-lock.json
