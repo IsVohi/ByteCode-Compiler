@@ -1,0 +1,17 @@
+// Fibonacci benchmark
+// Computes Fibonacci numbers iteratively
+
+fn fib(n) {
+    let a = 0;
+    let b = 1;
+    let i = n;
+    while (i) {
+        let temp = a + b;
+        a = b;
+        b = temp;
+        i = i - 1;
+    }
+    return a;
+}
+
+print(fib(20));

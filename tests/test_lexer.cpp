@@ -339,7 +339,7 @@ TEST_F(LexerTest, SkipMultipleComments) {
 
 TEST_F(LexerTest, SimpleLet) {
     auto types = tokenizeTypes("let x = 42;");
-    EXPECT_EQ(types.size(), 6);
+    EXPECT_EQ(types.size(), static_cast<size_t>(6));
     EXPECT_EQ(types[0], TokenType::KW_LET);
     EXPECT_EQ(types[1], TokenType::IDENTIFIER);
     EXPECT_EQ(types[2], TokenType::ASSIGN);
@@ -512,19 +512,19 @@ TEST_F(LexerTest, ColumnTracking) {
 
 TEST_F(LexerTest, EmptySource) {
     auto types = tokenizeTypes("");
-    EXPECT_EQ(types.size(), 1);
+    EXPECT_EQ(types.size(), static_cast<size_t>(1));
     EXPECT_EQ(types[0], TokenType::END_OF_FILE);
 }
 
 TEST_F(LexerTest, OnlyWhitespace) {
     auto types = tokenizeTypes("   \t\n  ");
-    EXPECT_EQ(types.size(), 1);
+    EXPECT_EQ(types.size(), static_cast<size_t>(1));
     EXPECT_EQ(types[0], TokenType::END_OF_FILE);
 }
 
 TEST_F(LexerTest, OnlyComment) {
     auto types = tokenizeTypes("// this is a comment");
-    EXPECT_EQ(types.size(), 1);
+    EXPECT_EQ(types.size(), static_cast<size_t>(1));
     EXPECT_EQ(types[0], TokenType::END_OF_FILE);
 }
 
@@ -563,7 +563,7 @@ TEST_F(LexerTest, CompleteProgram) {
     auto tokens = lexer.tokenize();
 
     // Should have at least: fn, identifier, (, identifier, ), {, if, ...
-    EXPECT_GT(tokens.size(), 30);
+    EXPECT_GT(tokens.size(), static_cast<size_t>(30));
     EXPECT_EQ(tokens.back().type, TokenType::END_OF_FILE);
 
     // Verify no unexpected ILLEGAL tokens

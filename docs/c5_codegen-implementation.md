@@ -1,0 +1,268 @@
+# How I Did Commit 5 - Code Generator
+
+## What Was the Goal of Commit 5?
+
+The goal was to **translate AST into bytecode**. The parser gives us a tree structure - now we need to convert it into executable instructions for the Virtual Machine.
+
+Think of it like:
+1. **Parser** (Commit 4): Understands the code structure (AST)
+2. **Code Generator** (Commit 5): Translates to machine instructions
+3. **VM** (Commit 6): Executes those instructions
+
+## What is Bytecode?
+
+**Bytecode** is a low-level representation of your program that a VM can execute.
+
+**Example:**
+```
+Source: let x = 3 + 5;
+
+Bytecode:
+  CONST 0    // Push constant[0] which is 3
+  CONST 1    // Push constant[1] which is 5
+  ADD        // Pop two, add, push result
+  STORE 0    // Store in variable slot 0 (x)
+```
+
+## How Does Code Generation Work?
+
+We use the **Visitor Pattern** (from Commit 3) to walk the AST and emit bytecode.
+
+### The CodeGenerator Class
+
+```cpp
+class CodeGenerator : public ASTVisitor {
+    BytecodeProgram program_;
+    std::vector<std::map<std::string, uint16_t>> scopes_;
+    
+    void emit(Opcode op, uint16_t operand = 0);
+    uint16_t addConstant(const Value& value);
+    uint16_t getOrCreateLocal(const std::string& name);
+};
+```
+
+### Generating Code for Expressions
+
+#### Numbers
+```cpp
+void CodeGenerator::visitNumberExpr(const NumberExpr& expr) {
+    uint16_t index = addConstant(expr.value());
+    emit(Opcode::CONST, index);
+}
+
+// Input: 42
+// Output: CONST 0  (where constants[0] = 42)
+```
+
+#### Identifiers
+```cpp
+void CodeGenerator::visitIdentifierExpr(const IdentifierExpr& expr) {
+    uint16_t slot = getLocal(expr.name());
+    emit(Opcode::LOAD, slot);
+}
+
+// Input: x
+// Output: LOAD 0  (where variable x is in slot 0)
+```
+
+#### Binary Operations
+```cpp
+void CodeGenerator::visitBinaryOpExpr(const BinaryOpExpr& expr) {
+    expr.left().accept(*this);   // Generate left side
+    expr.right().accept(*this);  // Generate right side
+    
+    switch (expr.op()) {
+        case Operator::PLUS:  emit(Opcode::ADD); break;
+        case Operator::MINUS: emit(Opcode::SUB); break;
+        case Operator::MUL:   emit(Opcode::MUL); break;
+        case Operator::DIV:   emit(Opcode::DIV); break;
+        // ... etc
+    }
+}
+
+// Input: a + b
+// Output: LOAD 0 (a), LOAD 1 (b), ADD
+```
+
+### Generating Code for Statements
+
+#### Assignment
+```cpp
+void CodeGenerator::visitAssignmentStmt(const AssignmentStmt& stmt) {
+    stmt.value().accept(*this);  // Generate value
+    uint16_t slot = getOrCreateLocal(stmt.name());
+    emit(Opcode::STORE, slot);
+}
+
+// Input: let x = 42;
+// Output: CONST 0, STORE 0
+```
+
+#### Print
+```cpp
+void CodeGenerator::visitPrintStmt(const PrintStmt& stmt) {
+    stmt.value().accept(*this);  // Generate value
+    emit(Opcode::PRINT);
+}
+
+// Input: print(x);
+// Output: LOAD 0, PRINT
+```
+
+#### If Statement
+```cpp
+void CodeGenerator::visitIfStmt(const IfStmt& stmt) {
+    stmt.condition().accept(*this);       // Generate condition
+    size_t jumpToEnd = emitJump(Opcode::JUMP_IF_ZERO);  // Jump if false
+    
+    // Generate "then" body
+    for (auto& s : stmt.thenBody()) {
+        s->accept(*this);
+    }
+    
+    patchJump(jumpToEnd, currentIndex());  // Patch jump address
+}
+```
+
+### Jump Patching
+
+Control flow requires **forward jumps** - we don't know where to jump until we've generated the body:
+
+```
+Step 1: Emit JUMP_IF_ZERO ???
+Step 2: Generate body (multiple instructions)
+Step 3: Now we know the address!
+Step 4: Go back and patch JUMP_IF_ZERO with correct address
+```
+
+### Function Calls
+
+```cpp
+void CodeGenerator::visitFunctionCallExpr(const FunctionCallExpr& expr) {
+    // Push arguments
+    for (auto& arg : expr.arguments()) {
+        arg->accept(*this);
+    }
+    
+    // Look up function address
+    uint16_t funcAddr = getFunctionAddress(expr.name());
+    emit(Opcode::CALL, funcAddr);
+}
+```
+
+## Symbol Tables
+
+We track variable names → slot numbers using **scopes**:
+
+```cpp
+std::vector<std::map<std::string, uint16_t>> scopes_;
+
+// Enter new scope (e.g., function or block)
+scopes_.emplace_back();
+
+// Look up variable (search all scopes)
+uint16_t getLocal(const std::string& name) {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+        if (auto found = it->find(name); found != it->end()) {
+            return found->second;
+        }
+    }
+    throw CodegenError("Undefined variable: " + name);
+}
+
+// Leave scope
+scopes_.pop_back();
+```
+
+## BytecodeProgram Structure
+
+```cpp
+struct BytecodeProgram {
+    std::vector<Instruction> code;      // The bytecode
+    std::vector<Value> constants;       // Constant pool
+    std::map<std::string, uint16_t> functions;  // Function table
+    uint16_t mainEntry;                 // Where main code starts
+};
+```
+
+## Complete Example
+
+**Source:**
+```javascript
+let x = 10;
+let y = 20;
+print(x + y);
+```
+
+**Generated Bytecode:**
+```
+Constants: [10, 20]
+
+Code:
+0: CONST 0      // Push 10
+1: STORE 0      // x = 10
+2: CONST 1      // Push 20
+3: STORE 1      // y = 20
+4: LOAD 0       // Push x
+5: LOAD 1       // Push y
+6: ADD          // x + y
+7: PRINT        // Print result
+8: CONST 2      // Push 0 (return value)
+9: RETURN       // End program
+```
+
+## Files Created/Modified
+
+| File | Lines | Description |
+|------|-------|-------------|
+| include/codegen.h | 100+ | CodeGenerator class definition |
+| src/codegen.cpp | 400+ | Code generation implementation |
+| tests/test_codegen.cpp | 300+ | 25+ code generation tests |
+
+## Key Design Decisions
+
+### Why Use Visitor Pattern?
+
+- Separates AST structure from operations
+- Easy to add new passes (optimizer, type checker)
+- Clean, maintainable code
+
+### Why Stack-Based Bytecode?
+
+- Simple to generate
+- Simple to execute
+- No register allocation needed
+
+### Why Constants Pool?
+
+- Deduplicates constants
+- Efficient storage
+- Easy VM lookup
+
+## Tests
+
+```cpp
+TEST(CodegenTest, GenerateArithmetic) {
+    auto ast = parse("let x = 3 + 5;");
+    CodeGenerator gen;
+    auto bytecode = gen.generate(*ast);
+    
+    EXPECT_EQ(bytecode.code.size(), 4);  // CONST, CONST, ADD, STORE
+}
+```
+
+## Summary
+
+Commit 5 implements the Code Generator:
+- ✅ Translates all AST node types to bytecode
+- ✅ Handles expressions, statements, functions
+- ✅ Implements scope/symbol table management
+- ✅ Generates clean, correct bytecode
+- ✅ Uses jump patching for control flow
+- ✅ Passes 25+ tests
+
+The code generator now produces bytecode ready for the Virtual Machine in Commit 6!
+
+---
+
+**Key Takeaway:** The Code Generator is the bridge between high-level code and low-level execution. It walks the AST and emits stack-based bytecode instructions.

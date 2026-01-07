@@ -1,0 +1,14 @@
+// Factorial benchmark
+// Computes factorial iteratively
+
+fn factorial(n) {
+    let result = 1;
+    let i = n;
+    while (i) {
+        result = result * i;
+        i = i - 1;
+    }
+    return result;
+}
+
+print(factorial(10));

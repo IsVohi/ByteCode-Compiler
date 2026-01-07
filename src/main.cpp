@@ -1,113 +1,265 @@
+#include <fstream>
 #include <iostream>
+#include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
-#include <vector>
-#include <optional>
 
+#include "codegen.h"
 #include "common.h"
+#include "lexer.h"
+#include "optimizer.h"
+#include "parser.h"
+#include "profiler.h"
+#include "vm.h"
+
 struct CompilerConfig {
-    std::string input_file;
-    bool optimize = true;
-    bool profile = false;
-    bool verbose = false;
+  std::string input_file;
+  bool optimize = true;
+  bool profile = false;
+  bool verbose = false;
+  bool dumpBytecode = false;
 };
 
-
-// CLI Parser
-
+/**
+ * Read entire file contents into a string
+ */
+std::string readFile(const std::string &path) {
+  std::ifstream file(path);
+  if (!file.is_open()) {
+    throw std::runtime_error("Cannot open file: " + path);
+  }
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  return buffer.str();
+}
 
 /**
  * Parse command-line arguments
- * @param argc Argument count
- * @param argv Argument vector
- * @return Optional CompilerConfig if parsing succeeds
  */
-std::optional<CompilerConfig> parse_arguments(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: compiler <input_file> [--no-opt] [--profile] [--verbose]\n";
-        return std::nullopt;
-    }
+/**
+ * Parse command-line arguments
+ */
+std::optional<CompilerConfig> parse_arguments(int argc, char *argv[]) {
+  CompilerConfig config;
 
-    CompilerConfig config;
-    config.input_file = argv[1];
-
-    // Parse flags
-    for (int i = 2; i < argc; ++i) {
-        std::string_view arg{argv[i]};
-        if (arg == "--no-opt") {
-            config.optimize = false;
-        } else if (arg == "--profile") {
-            config.profile = true;
-        } else if (arg == "--verbose") {
-            config.verbose = true;
-        } else {
-            std::cerr << "Unknown flag: " << arg << "\n";
-            return std::nullopt;
-        }
-    }
-
+  if (argc < 2) {
+    // REPL mode implied if no args
     return config;
+  }
+
+  std::string_view firstArg{argv[1]};
+  if (firstArg.empty() || firstArg[0] == '-') {
+    // No input file, just flags
+  } else {
+    config.input_file = argv[1];
+  }
+
+  for (int i = 1; i < argc; ++i) {
+    std::string_view arg{argv[i]};
+    if (arg == config.input_file)
+      continue; // Skip input file if already handled
+
+    if (arg == "--no-opt") {
+      config.optimize = false;
+    } else if (arg == "--profile") {
+      config.profile = true;
+    } else if (arg == "--verbose") {
+      config.verbose = true;
+    } else if (arg == "--dump") {
+      config.dumpBytecode = true;
+    } else {
+      std::cerr << "Unknown flag: " << arg << "\n";
+      return std::nullopt;
+    }
+  }
+
+  return config;
 }
 
-// ============================================================================
-// Main Entry Point
-// ============================================================================
+void runRepl() {
+  std::cout << "ByteCode Compiler REPL v1.0.0\n";
+  std::cout << "Type 'exit' to quit.\n";
 
-int main(int argc, char* argv[]) {
-    try {
-        // Parse command-line arguments
-        auto config = parse_arguments(argc, argv);
-        if (!config) {
-            return 1;
-        }
+  std::string line;
+  CodeGenerator codegen;
+  VirtualMachine vm;
+  Optimizer optimizer; // Optimizer might be tricky with incremental, maybe skip
+                       // for REPL or verify safety
 
-        // Print welcome message
-        std::cout << "=================================================\n";
-        std::cout << "  Optimizing Bytecode Compiler v0.1.0\n";
-        std::cout << "=================================================\n";
-        std::cout << "\n";
-
-        // Display configuration
-        std::cout << "Configuration:\n";
-        std::cout << "  Input file:       " << config->input_file << "\n";
-        std::cout << "  Optimization:     " << (config->optimize ? "enabled" : "disabled") << "\n";
-        std::cout << "  Profiling:        " << (config->profile ? "enabled" : "disabled") << "\n";
-        std::cout << "  Verbose output:   " << (config->verbose ? "enabled" : "disabled") << "\n";
-        std::cout << "\n";
-
-        // Print bytecode information
-        std::cout << "Bytecode Information:\n";
-        std::cout << "  Version:          " << static_cast<int>(BYTECODE_VERSION) << "\n";
-        std::cout << "  Max stack size:   " << MAX_STACK_SIZE << "\n";
-        std::cout << "  Max variables:    " << MAX_VARIABLES << "\n";
-        std::cout << "  Max instructions: " << MAX_INSTRUCTIONS << "\n";
-        std::cout << "\n";
-
-        // Print available opcodes
-        std::cout << "Available Opcodes:\n";
-        std::cout << "  0x00 - " << opcode_to_string(Opcode::CONST) << "\n";
-        std::cout << "  0x01 - " << opcode_to_string(Opcode::LOAD) << "\n";
-        std::cout << "  0x02 - " << opcode_to_string(Opcode::STORE) << "\n";
-        std::cout << "  0x03 - " << opcode_to_string(Opcode::ADD) << "\n";
-        std::cout << "  0x04 - " << opcode_to_string(Opcode::SUB) << "\n";
-        std::cout << "  0x05 - " << opcode_to_string(Opcode::MUL) << "\n";
-        std::cout << "  0x06 - " << opcode_to_string(Opcode::DIV) << "\n";
-        std::cout << "  0x07 - " << opcode_to_string(Opcode::MOD) << "\n";
-        std::cout << "  0x08 - " << opcode_to_string(Opcode::JUMP) << "\n";
-        std::cout << "  0x09 - " << opcode_to_string(Opcode::JUMP_IF_ZERO) << "\n";
-        std::cout << "  0x0A - " << opcode_to_string(Opcode::CALL) << "\n";
-        std::cout << "  0x0B - " << opcode_to_string(Opcode::RETURN) << "\n";
-        std::cout << "  0x0C - " << opcode_to_string(Opcode::PRINT) << "\n";
-        std::cout << "\n";
-
-        // Status message
-        std::cout << "[Compilation pipeline not yet implemented]\n";
-        std::cout << "\n";
-
-        return 0;
-
-    } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << "\n";
-        return 1;
+  while (true) {
+    std::cout << "> ";
+    if (!std::getline(std::cin, line) || line == "exit") {
+      break;
     }
+
+    if (line.empty())
+      continue;
+
+    try {
+      Lexer lexer(line);
+      auto tokens = lexer.tokenize();
+
+      Parser parser(tokens);
+      auto program = parser.parseProgram();
+
+      // Skip optimization in REPL for now to avoid complexity with incremental
+      // state Optimizer optimizer; optimizer.run(*program);
+
+      // Generate bytecode incrementally (preserve symbol tables)
+      auto bytecode = codegen.generate(*program, true);
+
+      // Execute incrementally (preserve stack/heap)
+      Value result = vm.execute(bytecode, nullptr, true);
+
+      // Only print non-void results
+      if (!result.isVoid()) {
+        if (result.isInt()) {
+          std::cout << result.asInt() << std::endl;
+        } else if (result.isString()) {
+          std::cout << "\"" << result.asString() << "\"" << std::endl;
+        } else if (result.isArray()) {
+          std::cout << "[Array]" << std::endl;
+        }
+      }
+
+    } catch (const std::exception &e) {
+      std::cerr << "Error: " << e.what() << "\n";
+    }
+  }
+}
+
+int main(int argc, char *argv[]) {
+  try {
+    auto config = parse_arguments(argc, argv);
+    if (!config) {
+      return 1;
+    }
+
+    if (config->verbose) {
+      std::cout << "=================================================\n";
+      std::cout << "  Optimizing Bytecode Compiler v1.0.0\n";
+      std::cout << "=================================================\n\n";
+      std::cout << "Input file: " << config->input_file << "\n";
+      std::cout << "Optimization: "
+                << (config->optimize ? "enabled" : "disabled") << "\n";
+      std::cout << "Profiling: " << (config->profile ? "enabled" : "disabled")
+                << "\n\n";
+    }
+
+    if (config->input_file.empty()) {
+      runRepl();
+      return 0;
+    }
+
+    // Stage 1: Read source file
+    if (config->verbose)
+      std::cout << "[1/5] Reading source file...\n";
+    std::string source = readFile(config->input_file);
+
+    // Stage 2: Lexical analysis
+    if (config->verbose)
+      std::cout << "[2/5] Lexical analysis...\n";
+    Lexer lexer(source);
+    auto tokens = lexer.tokenize();
+    if (config->verbose) {
+      std::cout << "      Generated " << tokens.size() << " tokens\n";
+    }
+
+    // Stage 3: Parsing
+    if (config->verbose)
+      std::cout << "[3/5] Parsing...\n";
+    Parser parser(tokens);
+    auto program = parser.parseProgram();
+    if (config->verbose) {
+      std::cout << "      AST with " << program->items().size()
+                << " top-level items\n";
+    }
+
+    // Stage 4: Optimization (optional)
+    if (config->optimize) {
+      if (config->verbose)
+        std::cout << "[4/5] Optimizing...\n";
+      Optimizer optimizer;
+      optimizer.run(*program);
+      if (config->verbose) {
+        auto stats = optimizer.getStats();
+        std::cout << "      Constants folded: " << stats.constantsFolded
+                  << "\n";
+        std::cout << "      Dead code removed: " << stats.deadCodeRemoved
+                  << "\n";
+        std::cout << "      Functions inlinable: " << stats.functionsInlined
+                  << "\n";
+      }
+    } else {
+      if (config->verbose)
+        std::cout << "[4/5] Skipping optimization\n";
+    }
+
+    // Stage 5: Code generation
+    if (config->verbose)
+      std::cout << "[5/5] Generating bytecode...\n";
+    CodeGenerator codegen;
+    auto bytecode = codegen.generate(*program);
+    if (config->verbose) {
+      std::cout << "      Generated " << bytecode.code.size()
+                << " instructions\n";
+      std::cout << "      Constants: " << bytecode.constants.size() << "\n";
+      std::cout << "      Functions: " << bytecode.functions.size() << "\n";
+    }
+
+    if (config->dumpBytecode) {
+      std::cout << "\n";
+      bytecode.dump();
+      std::cout << "\n";
+    }
+
+    // Stage 6: Execute
+    if (config->verbose)
+      std::cout << "\n--- Execution ---\n";
+
+    VirtualMachine vm;
+    Profiler profiler;
+
+    if (config->profile) {
+      profiler.startTiming();
+    }
+
+    Value result = vm.execute(bytecode, config->profile ? &profiler : nullptr);
+
+    if (config->profile) {
+      profiler.stopTiming();
+    }
+
+    if (config->verbose) {
+      if (result.isInt()) {
+        std::cout << "\n--- Result: " << result.asInt() << " ---\n";
+      } else {
+        std::cout << "\n--- Result: \"" << result.asString() << "\" ---\n";
+      }
+    }
+
+    if (config->profile) {
+      std::cout << "\n";
+      profiler.dump();
+    }
+
+    return 0;
+
+  } catch (const LexerError &e) {
+    std::cerr << "Lexer error: " << e.what() << "\n";
+    return 1;
+  } catch (const ParserError &e) {
+    std::cerr << "Parser error: " << e.what() << "\n";
+    return 1;
+  } catch (const CodegenError &e) {
+    std::cerr << "Codegen error: " << e.what() << "\n";
+    return 1;
+  } catch (const VMError &e) {
+    std::cerr << "Runtime error: " << e.what() << "\n";
+    return 1;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: " << e.what() << "\n";
+    return 1;
+  }
 }

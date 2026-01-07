@@ -1,0 +1,200 @@
+// Comprehensive Demo - Tests All Compiler Features
+// This program demonstrates every feature of the compiler
+
+print("=== ByteCode Compiler Feature Demonstration ===");
+print("");
+
+// ============ Variables & Arithmetic ============
+print("1. Variables and Arithmetic Operations:");
+let x = 10;
+let y = 20;
+print(x + y);      // Addition: 30
+print(y - x);      // Subtraction: 10
+print(x * 3);      // Multiplication: 30
+print(y / 4);      // Division: 5
+print(y % 3);      // Modulo: 2
+print("");
+
+// ============ String Literals ============
+print("2. String Support:");
+let greeting = "Hello";
+let name = "World";
+print(greeting);
+print(name);
+print("");
+
+// ============ Conditional Statements ============
+print("3. If/Else Statements:");
+let age = 18;
+if (age >= 18) {
+    print("Adult");
+}
+
+let score = 85;
+if (score >= 90) {
+    print("Grade: A");
+}
+if (score < 90) {
+    if (score >= 80) {
+        print("Grade: B");
+    }
+}
+print("");
+
+// ============ While Loops ============
+print("4. While Loop:");
+let counter = 0;
+while (counter < 5) {
+    print(counter);
+    counter = counter + 1;
+}
+print("");
+
+// ============ For Loops ============
+print("5. For Loop:");
+for (let i = 0; i < 5; i = i + 1) {
+    print(i);
+}
+print("");
+
+// ============ Break Statement ============
+print("6. Break Statement:");
+for (let i = 0; i < 10; i = i + 1) {
+    if (i == 3) {
+        break;
+    }
+    print(i);
+}
+print("");
+
+// ============ Continue Statement ============
+print("7. Continue Statement:");
+for (let i = 0; i < 5; i = i + 1) {
+    if (i == 2) {
+        continue;
+    }
+    print(i);
+}
+print("");
+
+// ============ Functions ============
+print("8. Function Definitions and Calls:");
+
+fn add(a, b) {
+    return a + b;
+}
+
+fn multiply(x, y) {
+    return x * y;
+}
+
+print(add(5, 3));           // 8
+print(multiply(4, 7));      // 28
+print("");
+
+// ============ Recursive Functions ============
+print("9. Recursive Function (Factorial):");
+
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+print(factorial(5));        // 120
+print("");
+
+// ============ Arrays ============
+print("10. Array Literals:");
+let numbers = [1, 2, 3, 4, 5];
+print(numbers);
+print("");
+
+print("11. Array Indexing:");
+print(numbers[0]);          // 1
+print(numbers[2]);          // 3
+print(numbers[4]);          // 5
+print("");
+
+print("12. Array Assignment:");
+numbers[1] = 99;
+print(numbers);             // [1, 99, 3, 4, 5]
+print("");
+
+print("13. Nested Arrays:");
+let matrix = [[1, 2], [3, 4], [5, 6]];
+print(matrix);
+print(matrix[0]);           // [1, 2]
+print(matrix[1][0]);        // 3
+print("");
+
+// ============ Array Operations ============
+print("14. Array Processing with Loops:");
+let arr = [10, 20, 30, 40, 50];
+let sum = 0;
+for (let i = 0; i < 5; i = i + 1) {
+    sum = sum + arr[i];
+}
+print(sum);                 // 150
+print("");
+
+// ============ Comparison Operators ============
+print("15. Comparison Operators:");
+print(5 == 5);              // 1 (true)
+print(5 != 3);              // 1 (true)
+print(3 < 5);               // 1 (true)
+print(5 <= 5);              // 1 (true)
+print(7 > 3);               // 1 (true)
+print(5 >= 5);              // 1 (true)
+print("");
+
+// ============ Complex Example: Bubble Sort ============
+print("16. Complex Algorithm (Bubble Sort):");
+let data = [64, 34, 25, 12, 22, 11, 90];
+print("Before sort:");
+print(data);
+
+let n = 7;
+for (let i = 0; i < n - 1; i = i + 1) {
+    for (let j = 0; j < n - i - 1; j = j + 1) {
+        if (data[j] > data[j + 1]) {
+            let temp = data[j];
+            data[j] = data[j + 1];
+            data[j + 1] = temp;
+        }
+    }
+}
+
+print("After sort:");
+print(data);
+print("");
+
+// ============ Function with Arrays ============
+print("17. Functions with Array Parameters:");
+
+fn findMax(arr, size) {
+    let max = arr[0];
+    for (let i = 1; i < size; i = i + 1) {
+        if (arr[i] > max) {
+            max = arr[i];
+        }
+    }
+    return max;
+}
+
+let values = [45, 23, 78, 12, 89, 34];
+let maximum = findMax(values, 6);
+print(maximum);             // 89
+print("");
+
+// ============ Nested Loops ============
+print("18. Nested Loops:");
+for (let row = 0; row < 3; row = row + 1) {
+    for (let col = 0; col < 3; col = col + 1) {
+        print(row * 3 + col);
+    }
+}
+print("");
+
+print("=== All Features Tested Successfully! ===");

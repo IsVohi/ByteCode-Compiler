@@ -40,17 +40,29 @@ __pycache__/
 .pytest_cache/
 htmlcov/
 
-# Result files
+# Result files (excluding dashboard.html which is source-controlled)
 results/*.csv
-results/*.html
 results/*.json
 results/*.txt
+results/profile*
 
 # Compiled test and benchmark binaries
-compiler
-benchmarks
-*.out
+benchmarks/*.out
 
 # Doxygen
 docs/html/
 docs/latex/
+
+# Debug and temporary files
+debug_bytecode
+debug_bytecode.cpp
+*.log
+*.tmp
+*.bak
+
+# Example test files (temporary)
+examples/test_*.txt
+
+# Google Test build artifacts
+_deps/
+lib/

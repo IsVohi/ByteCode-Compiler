@@ -6,70 +6,75 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Compiler flags - warnings as errors
-if(MSVC)
-    add_compile_options(/W4 /WX)
-else()
-    add_compile_options(-Wall -Wextra -Werror -pedantic)
-endif()
-
-# Include directories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 # Source files for main compiler executable
 set(COMPILER_SOURCES
     src/main.cpp
     src/lexer.cpp
     src/parser.cpp
     src/ast.cpp
+    src/codegen.cpp
+    src/vm.cpp
+    src/optimizer.cpp
+)
+
+# Library sources (shared between compiler and tests)
+set(LIB_SOURCES
+    src/lexer.cpp
+    src/parser.cpp
+    src/ast.cpp
+    src/codegen.cpp
+    src/vm.cpp
+    src/optimizer.cpp
 )
 
 # Main compiler executable
 add_executable(compiler ${COMPILER_SOURCES})
 target_include_directories(compiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Testing setup with GoogleTest
+if(MSVC)
+    target_compile_options(compiler PRIVATE /W4 /WX)
+else()
+    target_compile_options(compiler PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+
+# Testing setup
 include(FetchContent)
 FetchContent_Declare(googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
 )
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Enable testing
 enable_testing()
 
-# Test executable
 add_executable(tests
     tests/test_lexer.cpp
     tests/test_parser.cpp
-    src/lexer.cpp
-    src/parser.cpp
-    src/ast.cpp
+    tests/test_codegen.cpp
+    tests/test_vm.cpp
+    tests/test_optimizer.cpp
+    tests/test_end_to_end.cpp
+    tests/test_control_flow.cpp
+    tests/test_arrays.cpp
+    tests/test_bubblesort.cpp
+    ${LIB_SOURCES}
 )
 
-target_link_libraries(tests
-    gtest_main
-    gtest
-)
+# Link to gtest
+target_link_libraries(tests PRIVATE GTest::gtest GTest::gtest_main)
 
 target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# Note: We rely on GTest::gtest target to provide correct include directories
+# to avoid conflicts with system headers.
+
+if(MSVC)
+    target_compile_options(tests PRIVATE /W4 /WX)
+else()
+    # Note: We relax -Werror for tests to avoid issues with GTest macros
+    target_compile_options(tests PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 add_test(NAME AllTests COMMAND tests)
-
-# Custom test_all target
-add_custom_target(test_all
-    COMMAND ${CMAKE_CTEST_COMMAND} --verbose
-    DEPENDS tests
-)
-
-# Optional: add compiler as dependency for potential integration tests
-add_dependencies(test_all compiler)
-
-# Print build configuration
-message(STATUS "Optimizing Bytecode Compiler Configuration:")
-message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID}")
-message(STATUS "  Lexer: enabled")
-message(STATUS "  Parser: enabled (skeleton)")
-message(STATUS "  AST: enabled")

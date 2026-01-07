@@ -1,0 +1,14 @@
+// Sum loop benchmark
+// Sums numbers from 1 to N
+
+fn sum_to(n) {
+    let total = 0;
+    let i = n;
+    while (i) {
+        total = total + i;
+        i = i - 1;
+    }
+    return total;
+}
+
+print(sum_to(100));
